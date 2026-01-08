@@ -62,10 +62,6 @@ cd client
 npm start
 ```
 
-## 🔗 URLs
-
-- **Frontend**: http://localhost:3000
-- **Backend API**: http://localhost:5000
 
 ## 📊 API Endpoints
 
