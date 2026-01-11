@@ -1,19 +1,23 @@
 {
   "version": 2,
-  "buildCommand": "cd TechSprit/ai-resume-fairness/client && npm install && npm run build",
-  "outputDirectory": "TechSprit/ai-resume-fairness/client/build",
-  "installCommand": "cd TechSprit/ai-resume-fairness && npm install && cd client && npm install",
+  "github": {
+    "silent": true
+  },
+  "rootDirectory": "TechSprit/ai-resume-fairness",
+  "buildCommand": "cd client && npm install && npm run build",
+  "outputDirectory": "client/build",
+  "installCommand": "npm install && cd client && npm install",
   "functions": {
-    "TechSprit/ai-resume-fairness/api/**/*.js": {
+    "api/**/*.js": {
       "maxDuration": 60
     }
   },
   "rewrites": [
-    { "source": "/api/health", "destination": "/TechSprit/ai-resume-fairness/api/health" },
-    { "source": "/api/models", "destination": "/TechSprit/ai-resume-fairness/api/models" },
-    { "source": "/api/verify", "destination": "/TechSprit/ai-resume-fairness/api/verify" },
-    { "source": "/api/resume/upload", "destination": "/TechSprit/ai-resume-fairness/api/resume/upload" },
-    { "source": "/api/resume/history/:userId", "destination": "/TechSprit/ai-resume-fairness/api/resume/history/[userId]" },
+    { "source": "/api/health", "destination": "/api/health" },
+    { "source": "/api/models", "destination": "/api/models" },
+    { "source": "/api/verify", "destination": "/api/verify" },
+    { "source": "/api/resume/upload", "destination": "/api/resume/upload" },
+    { "source": "/api/resume/history/:userId", "destination": "/api/resume/history/[userId]" },
     { "source": "/((?!api/).*)", "destination": "/index.html" }
   ],
   "headers": [
