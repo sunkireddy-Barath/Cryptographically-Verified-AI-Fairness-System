@@ -2,7 +2,7 @@
   "version": 2,
   "buildCommand": "cd client && npm install && npm run build",
   "outputDirectory": "client/build",
-  "framework": null,
+  "installCommand": "npm install && cd client && npm install",
   "functions": {
     "api/**/*.js": {
       "maxDuration": 60
@@ -14,7 +14,7 @@
     { "source": "/api/verify", "destination": "/api/verify" },
     { "source": "/api/resume/upload", "destination": "/api/resume/upload" },
     { "source": "/api/resume/history/:userId", "destination": "/api/resume/history/[userId]" },
-    { "source": "/(.*)", "destination": "/index.html" }
+    { "source": "/((?!api/).*)", "destination": "/index.html" }
   ],
   "headers": [
     {
