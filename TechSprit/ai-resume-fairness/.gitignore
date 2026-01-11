@@ -3,6 +3,11 @@ node_modules/
 client/node_modules/
 server/node_modules/
 
+# Package locks (let Vercel generate fresh)
+package-lock.json
+client/package-lock.json
+server/package-lock.json
+
 # Build outputs
 client/build/
 dist/
