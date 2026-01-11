@@ -84,15 +84,16 @@ const Register = () => {
   ];
 
   const workflowSteps = [
-    { num: '01', title: 'Upload', desc: 'Submit your document in PDF or DOC format' },
-    { num: '02', title: 'Hash', desc: 'SHA-256 cryptographic hash generated' },
-    { num: '03', title: 'Analyze', desc: 'OpenRouter AI extracts skills & experience' },
-    { num: '04', title: 'Verify', desc: 'Vertex AI checks for bias & fairness' },
-    { num: '05', title: 'Result', desc: 'Get verified, unbiased evaluation' }
+    { num: '01', title: 'Upload', desc: 'Submit your document' },
+    { num: '02', title: 'Hash', desc: 'SHA-256 fingerprint' },
+    { num: '03', title: 'Analyze', desc: 'OpenRouter evaluates' },
+    { num: '04', title: 'Cross-Check', desc: 'Claude AI validates' },
+    { num: '05', title: 'Verify', desc: 'Vertex AI audits' },
+    { num: '06', title: 'Result', desc: 'Fair evaluation' }
   ];
 
   return (
-    <div style={{
+    <div className="register-container" style={{
       minHeight: '100vh',
       background: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%)',
       display: 'flex',
@@ -135,7 +136,7 @@ const Register = () => {
       }} />
 
       {/* Left Side - Project Overview */}
-      <div style={{
+      <div className="left-panel" style={{
         flex: 1,
         padding: '50px 60px',
         display: 'flex',
@@ -287,25 +288,31 @@ const Register = () => {
             textTransform: 'uppercase',
             letterSpacing: '1.5px'
           }}>
-            🔄 5-Step Verification Process
+            🔄 6-Step Triple-Model Verification
           </div>
           <div style={{
             display: 'flex',
-            gap: '8px'
+            gap: '6px',
+            flexWrap: 'wrap'
           }}>
             {workflowSteps.map((step, idx) => (
               <div key={idx} style={{
-                flex: 1,
-                padding: '12px',
-                background: 'rgba(99, 102, 241, 0.08)',
+                flex: '1 1 80px',
+                minWidth: '70px',
+                padding: '10px 8px',
+                background: idx === 3 ? 'rgba(236, 72, 153, 0.08)' : 
+                           idx === 4 ? 'rgba(16, 185, 129, 0.08)' : 'rgba(99, 102, 241, 0.08)',
                 borderRadius: '12px',
-                border: '1px solid rgba(99, 102, 241, 0.15)',
+                border: `1px solid ${idx === 3 ? 'rgba(236, 72, 153, 0.15)' : 
+                         idx === 4 ? 'rgba(16, 185, 129, 0.15)' : 'rgba(99, 102, 241, 0.15)'}`,
                 textAlign: 'center'
               }}>
                 <div style={{
-                  fontSize: '20px',
+                  fontSize: '16px',
                   fontWeight: '800',
-                  background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                  background: idx === 3 ? 'linear-gradient(135deg, #ec4899, #db2777)' :
+                             idx === 4 ? 'linear-gradient(135deg, #10b981, #059669)' :
+                             'linear-gradient(135deg, #6366f1, #8b5cf6)',
                   WebkitBackgroundClip: 'text',
                   WebkitTextFillColor: 'transparent',
                   marginBottom: '4px'
@@ -313,7 +320,7 @@ const Register = () => {
                   {step.num}
                 </div>
                 <div style={{
-                  fontSize: '12px',
+                  fontSize: '10px',
                   fontWeight: '600',
                   color: '#fff',
                   marginBottom: '2px'
@@ -321,9 +328,9 @@ const Register = () => {
                   {step.title}
                 </div>
                 <div style={{
-                  fontSize: '10px',
+                  fontSize: '9px',
                   color: '#64748b',
-                  lineHeight: '1.3'
+                  lineHeight: '1.2'
                 }}>
                   {step.desc}
                 </div>
@@ -355,16 +362,129 @@ const Register = () => {
       </div>
 
       {/* Right Side - Register Form */}
-      <div style={{
+      <div className="right-panel" style={{
         width: '480px',
         padding: '30px 40px',
         display: 'flex',
+        flexDirection: 'column',
         alignItems: 'center',
-        justifyContent: 'center',
+        justifyContent: 'flex-start',
         position: 'relative',
-        zIndex: 1
+        zIndex: 1,
+        overflowY: 'auto',
+        paddingTop: '40px'
       }}>
-        <div style={{
+        {/* Mobile Header - Only visible on mobile */}
+        <div className="mobile-header" style={{
+          display: 'none',
+          flexDirection: 'column',
+          alignItems: 'center',
+          marginBottom: '24px',
+          textAlign: 'center',
+          width: '100%'
+        }}>
+          {/* Brand Logo Row */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '14px',
+            marginBottom: '16px'
+          }}>
+            <div className="mobile-logo" style={{
+              width: '48px',
+              height: '48px',
+              background: 'linear-gradient(135deg, #10b981, #059669)',
+              borderRadius: '14px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 10px 40px rgba(16, 185, 129, 0.4), 0 0 20px rgba(16, 185, 129, 0.2)'
+            }}>
+              <Shield size={24} color="#fff" />
+            </div>
+            <div style={{ textAlign: 'left' }}>
+              <span style={{
+                fontSize: '18px',
+                fontWeight: '700',
+                color: '#fff',
+                display: 'block',
+                letterSpacing: '-0.3px'
+              }}>AI Document Fairness</span>
+              <span style={{
+                fontSize: '11px',
+                color: '#34d399',
+                fontWeight: '500'
+              }}>Cryptographically Verified</span>
+            </div>
+          </div>
+          
+          {/* Mobile Hero Title */}
+          <h2 className="mobile-hero-title" style={{
+            fontSize: '24px',
+            fontWeight: '800',
+            color: '#fff',
+            margin: '0 0 12px 0',
+            lineHeight: '1.2',
+            letterSpacing: '-0.5px'
+          }}>
+            Join the <span style={{
+              background: 'linear-gradient(135deg, #10b981, #3b82f6, #8b5cf6)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent'
+            }}>Future</span>
+          </h2>
+          
+          <p style={{
+            fontSize: '13px',
+            color: '#64748b',
+            maxWidth: '300px',
+            lineHeight: '1.5'
+          }}>
+            Experience transparent, AI-powered evaluation that eliminates bias
+          </p>
+          
+          {/* Mobile Stats */}
+          <div className="mobile-stats" style={{ display: 'flex', gap: '14px', marginTop: '14px', flexWrap: 'wrap', justifyContent: 'center' }}>
+            <div style={{ 
+              padding: '8px 14px', 
+              background: 'rgba(16, 185, 129, 0.1)', 
+              borderRadius: '20px',
+              border: '1px solid rgba(16, 185, 129, 0.2)',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center'
+            }}>
+              <span style={{ fontSize: '13px', fontWeight: '700', color: '#34d399' }}>100%</span>
+              <span style={{ fontSize: '10px', color: '#64748b' }}>Unbiased</span>
+            </div>
+            <div style={{ 
+              padding: '8px 14px', 
+              background: 'rgba(99, 102, 241, 0.1)', 
+              borderRadius: '20px',
+              border: '1px solid rgba(99, 102, 241, 0.2)',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center'
+            }}>
+              <span style={{ fontSize: '13px', fontWeight: '700', color: '#a5b4fc' }}>SHA-256</span>
+              <span style={{ fontSize: '10px', color: '#64748b' }}>Secure</span>
+            </div>
+            <div style={{ 
+              padding: '8px 14px', 
+              background: 'rgba(251, 191, 36, 0.1)', 
+              borderRadius: '20px',
+              border: '1px solid rgba(251, 191, 36, 0.2)',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center'
+            }}>
+              <span style={{ fontSize: '13px', fontWeight: '700', color: '#fbbf24' }}>5-Step</span>
+              <span style={{ fontSize: '10px', color: '#64748b' }}>Process</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="register-card" style={{
           width: '100%',
           maxWidth: '400px',
           padding: '32px',
@@ -697,6 +817,234 @@ const Register = () => {
         }
         input::placeholder {
           color: #4b5563;
+        }
+        
+        /* ===== RESPONSIVE STYLES ===== */
+        @media (max-width: 1200px) {
+          .left-panel {
+            padding: 30px 40px !important;
+          }
+        }
+        
+        @media (max-width: 1024px) {
+          .register-container {
+            flex-direction: column !important;
+            background: linear-gradient(180deg, #030712 0%, #0f0a1e 50%, #030712 100%) !important;
+          }
+          .left-panel {
+            display: none !important;
+          }
+          .right-panel {
+            width: 100% !important;
+            padding: 24px 20px !important;
+            padding-top: 50px !important;
+            padding-bottom: 40px !important;
+            min-height: 100vh;
+            align-items: center !important;
+            background: transparent !important;
+          }
+          .mobile-header {
+            display: flex !important;
+          }
+          .register-card {
+            max-width: 420px !important;
+            padding: 36px 28px !important;
+            border-radius: 28px !important;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5), 0 0 100px rgba(16, 185, 129, 0.1) !important;
+          }
+        }
+        
+        @media (max-width: 768px) {
+          .right-panel {
+            padding: 20px 16px !important;
+            padding-top: 40px !important;
+          }
+          .mobile-header {
+            margin-bottom: 24px !important;
+          }
+          .mobile-hero-title {
+            font-size: 22px !important;
+          }
+          .mobile-stats {
+            gap: 10px !important;
+          }
+          .mobile-stats > div {
+            padding: 6px 12px !important;
+          }
+          .register-card {
+            padding: 32px 24px !important;
+            border-radius: 24px !important;
+            max-width: 100% !important;
+          }
+          .register-card h1 {
+            font-size: 24px !important;
+          }
+          .register-card input {
+            padding: 14px 16px !important;
+            font-size: 15px !important;
+            border-radius: 12px !important;
+          }
+          .register-card button[type="submit"],
+          .register-card button[type="button"] {
+            padding: 15px 20px !important;
+            font-size: 15px !important;
+            border-radius: 14px !important;
+          }
+        }
+        
+        @media (max-width: 480px) {
+          .right-panel {
+            padding: 16px 14px !important;
+            padding-top: 32px !important;
+          }
+          .mobile-header {
+            margin-bottom: 20px !important;
+          }
+          .mobile-logo {
+            width: 42px !important;
+            height: 42px !important;
+            border-radius: 12px !important;
+          }
+          .mobile-header > div:first-child span:first-child {
+            font-size: 16px !important;
+          }
+          .mobile-hero-title {
+            font-size: 20px !important;
+          }
+          .mobile-stats > div {
+            padding: 5px 10px !important;
+            border-radius: 16px !important;
+          }
+          .register-card {
+            padding: 28px 20px !important;
+            border-radius: 22px !important;
+          }
+          .register-card > div:first-child > div:first-child {
+            width: 48px !important;
+            height: 48px !important;
+            border-radius: 12px !important;
+          }
+          .register-card h1 {
+            font-size: 22px !important;
+          }
+          .register-card p {
+            font-size: 12px !important;
+          }
+          .register-card input {
+            padding: 13px 14px !important;
+            font-size: 15px !important;
+            border-radius: 12px !important;
+          }
+          .register-card button[type="submit"],
+          .register-card button[type="button"] {
+            padding: 14px 18px !important;
+            font-size: 14px !important;
+            border-radius: 12px !important;
+          }
+          .register-card label {
+            font-size: 11px !important;
+          }
+        }
+        
+        @media (max-width: 380px) {
+          .right-panel {
+            padding: 12px !important;
+            padding-top: 24px !important;
+          }
+          .mobile-header {
+            margin-bottom: 16px !important;
+          }
+          .mobile-logo {
+            width: 38px !important;
+            height: 38px !important;
+          }
+          .mobile-hero-title {
+            font-size: 18px !important;
+          }
+          .mobile-stats > div {
+            padding: 4px 8px !important;
+          }
+          .register-card {
+            padding: 24px 18px !important;
+            border-radius: 20px !important;
+          }
+          .register-card h1 {
+            font-size: 20px !important;
+          }
+          .register-card input {
+            padding: 12px 12px !important;
+            font-size: 14px !important;
+            border-radius: 10px !important;
+          }
+          .register-card button[type="submit"],
+          .register-card button[type="button"] {
+            padding: 13px 16px !important;
+            font-size: 13px !important;
+            border-radius: 10px !important;
+          }
+        }
+        
+        /* Mobile-first touch enhancements */
+        @media (hover: none) and (pointer: coarse) {
+          .register-card button[type="submit"],
+          .register-card button[type="button"] {
+            transition: transform 0.1s ease, box-shadow 0.1s ease !important;
+          }
+          .register-card button[type="submit"]:active {
+            transform: scale(0.97);
+            box-shadow: 0 5px 20px rgba(16, 185, 129, 0.3) !important;
+          }
+          .register-card button[type="button"]:active {
+            transform: scale(0.97);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1) !important;
+          }
+          .register-card input {
+            font-size: 16px !important; /* Prevents zoom on iOS */
+          }
+        }
+        
+        /* Safe area for notched phones */
+        @supports (padding-top: env(safe-area-inset-top)) {
+          .right-panel {
+            padding-top: calc(40px + env(safe-area-inset-top)) !important;
+            padding-bottom: calc(40px + env(safe-area-inset-bottom)) !important;
+            padding-left: max(16px, env(safe-area-inset-left)) !important;
+            padding-right: max(16px, env(safe-area-inset-right)) !important;
+          }
+        }
+        
+        /* Landscape mobile */
+        @media (max-height: 600px) and (orientation: landscape) {
+          .right-panel {
+            padding-top: 20px !important;
+          }
+          .mobile-header {
+            flex-direction: row !important;
+            justify-content: space-between !important;
+            align-items: center !important;
+            margin-bottom: 16px !important;
+          }
+          .mobile-hero-title {
+            display: none !important;
+          }
+          .mobile-header > p {
+            display: none !important;
+          }
+          .mobile-stats {
+            margin-top: 0 !important;
+          }
+          .register-card {
+            padding: 24px !important;
+          }
+          .register-card > div:first-child > div:first-child {
+            width: 40px !important;
+            height: 40px !important;
+            margin-bottom: 10px !important;
+          }
+          .register-card h1 {
+            font-size: 18px !important;
+            margin-bottom: 4px !important;
+          }
         }
       `}</style>
     </div>

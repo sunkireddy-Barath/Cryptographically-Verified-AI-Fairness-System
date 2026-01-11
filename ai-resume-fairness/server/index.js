@@ -53,20 +53,20 @@ const upload = multer({
 });
 
 // In-memory storage for demo (replace with Firebase Firestore in production)
-const resumeDatabase = new Map();
+const documentDatabase = new Map();
 const modelDatabase = [
   {
     id: 'model-001',
-    name: 'Resume Shortlisting Model v1.2',
-    domain: 'Job Hiring',
+    name: 'Document Evaluation Model v1.2',
+    domain: 'Job Hiring & Recruitment',
     status: 'verified',
     impactRatio: '94.2%',
     lastAudit: '2026-01-05'
   },
   {
     id: 'model-002',
-    name: 'Talent Match Engine',
-    domain: 'Recruitment',
+    name: 'Loan Application Analyzer',
+    domain: 'Banking & Finance',
     status: 'verified',
     impactRatio: '91.8%',
     lastAudit: '2026-01-06'
@@ -74,18 +74,26 @@ const modelDatabase = [
   {
     id: 'model-003',
     name: 'Credit Risk Assessment',
-    domain: 'Finance',
+    domain: 'Financial Services',
     status: 'biased',
     impactRatio: '67.3%',
     lastAudit: '2026-01-04'
   },
   {
     id: 'model-004',
-    name: 'Claims Processing AI',
+    name: 'Insurance Claims Processor',
     domain: 'Insurance',
     status: 'under_review',
     impactRatio: '78.5%',
     lastAudit: '2026-01-07'
+  },
+  {
+    id: 'model-005',
+    name: 'Financial Report Analyzer',
+    domain: 'Corporate Finance',
+    status: 'verified',
+    impactRatio: '89.1%',
+    lastAudit: '2026-01-08'
   }
 ];
 
@@ -130,17 +138,17 @@ async function extractTextFromFile(filePath, fileName) {
   }
 }
 
-// Evaluate resume using OpenRouter API - PRIMARY MODEL
-async function evaluateResumeWithLLM(resumeText, fileName) {
+// Evaluate document using OpenRouter API - PRIMARY MODEL
+async function evaluateDocumentWithLLM(documentText, fileName) {
   log('🤖 MODEL 1: OPENROUTER LLM EVALUATION', 'Starting primary AI evaluation...', {
     model: 'mistralai/mistral-7b-instruct:free',
-    inputLength: resumeText.length
+    inputLength: documentText.length
   });
 
-  // First, extract real data from resume
-  const extractedData = extractRealDataFromResume(resumeText);
+  // First, extract real data from document
+  const extractedData = extractRealDataFromDocument(documentText);
   
-  log('📊 EXTRACTED RESUME DATA', 'Real data from resume:', extractedData);
+  log('📊 EXTRACTED DOCUMENT DATA', 'Real data from document:', extractedData);
 
   try {
     const response = await axios.post(
@@ -150,32 +158,32 @@ async function evaluateResumeWithLLM(resumeText, fileName) {
         messages: [
           {
             role: 'system',
-            content: `You are an expert AI resume evaluator. Analyze the resume content and provide a detailed evaluation.
+            content: `You are an expert AI document evaluator. Analyze the document content and provide a detailed evaluation. This could be a resume, loan application, financial report, insurance claim, or any other document.
 
 IMPORTANT: You must respond ONLY with a valid JSON object, no other text.
 
 Evaluate based on:
-- Technical skills and expertise found in the resume
-- Years of experience
-- Education background
-- Projects and achievements mentioned
-- Overall quality and presentation
+- Key information and data found in the document
+- Relevant experience or history
+- Supporting documentation and evidence
+- Quality and completeness of information
+- Overall presentation and clarity
 
 JSON Response Format:
 {
-  "score": <number 0-100 based on resume quality>,
-  "skills": [<extract ACTUAL skills mentioned in the resume>],
-  "experienceLevel": "<Entry/Mid/Senior/Expert based on actual experience>",
-  "experienceYears": <estimated years from resume>,
-  "shortlistRecommendation": "<Yes/No/Maybe>",
-  "strengths": [<extract ACTUAL achievements and strengths from resume>],
-  "improvements": [<areas that could be improved>],
-  "reasoning": "<extract key highlights and summary from the ACTUAL resume content>"
+  "score": <number 0-100 based on document quality and criteria met>,
+  "skills": [<extract ACTUAL skills, qualifications, or key data points from the document>],
+  "experienceLevel": "<Entry/Mid/Senior/Expert or Low/Medium/High based on context>",
+  "experienceYears": <estimated years if applicable>,
+  "shortlistRecommendation": "<Yes/No/Maybe - Approve/Reject/Review>",
+  "strengths": [<extract ACTUAL achievements, positive factors, or strong points>],
+  "improvements": [<areas that could be improved or missing information>],
+  "reasoning": "<extract key highlights and summary from the ACTUAL document content>"
 }`
           },
           {
             role: 'user',
-            content: `Please evaluate this resume and extract REAL information:\n\nFile: ${fileName}\n\nContent:\n${resumeText.substring(0, 6000)}`
+            content: `Please evaluate this document and extract REAL information:\n\nFile: ${fileName}\n\nContent:\n${documentText.substring(0, 6000)}`
           }
         ],
         temperature: 0.3,
@@ -186,7 +194,7 @@ JSON Response Format:
           'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
           'Content-Type': 'application/json',
           'HTTP-Referer': 'http://localhost:3000',
-          'X-Title': 'AI Resume Fairness System'
+          'X-Title': 'AI Document Fairness System'
         }
       }
     );
@@ -217,7 +225,7 @@ JSON Response Format:
         throw new Error('No JSON found in response');
       }
     } catch (parseError) {
-      log('🤖 MODEL 1: USING EXTRACTED DATA', 'Using real extracted data from resume');
+      log('🤖 MODEL 1: USING EXTRACTED DATA', 'Using real extracted data from document');
       evaluation = {
         score: extractedData.calculatedScore,
         skills: extractedData.skills,
@@ -250,9 +258,9 @@ JSON Response Format:
   }
 }
 
-// Extract REAL data from resume content
-function extractRealDataFromResume(resumeText) {
-  const text = resumeText;
+// Extract REAL data from document content
+function extractRealDataFromDocument(documentText) {
+  const text = documentText;
   const textLower = text.toLowerCase();
   
   // ===== EXTRACT REAL SKILLS =====
@@ -478,29 +486,37 @@ function extractRealDataFromResume(resumeText) {
   
   summary = notableItems.slice(0, 3).join(' • ').substring(0, 500);
   if (!summary) {
-    summary = `Resume contains ${foundSkills.length} technical skills. ${strengths.length > 0 ? strengths[0] : 'Professional profile reviewed.'}`;
+    summary = `Document contains ${foundSkills.length} relevant data points. ${strengths.length > 0 ? strengths[0] : 'Document reviewed for evaluation.'}`;
   }
   
   // ===== CALCULATE SCORE =====
-  let calculatedScore = 40; // Base score
+  let calculatedScore = 30; // Base score
   
-  // Skills contribution (max 25 points)
-  calculatedScore += Math.min(25, foundSkills.length * 2.5);
+  // Skills contribution (max 20 points) - reduced multiplier
+  calculatedScore += Math.min(20, foundSkills.length * 1);
   
   // Achievements contribution (max 20 points)
-  calculatedScore += Math.min(20, strengths.length * 5);
+  calculatedScore += Math.min(20, strengths.length * 4);
   
   // Experience contribution (max 15 points)
   if (experienceLevel === 'Expert') calculatedScore += 15;
   else if (experienceLevel === 'Senior') calculatedScore += 12;
   else if (experienceLevel === 'Mid') calculatedScore += 8;
-  else calculatedScore += 4;
+  else calculatedScore += 3;
   
-  // Content quality (length) contribution
-  if (text.length > 2000) calculatedScore += 5;
-  if (text.length > 3000) calculatedScore += 5;
+  // Content quality (length) contribution (max 10 points)
+  if (text.length > 1500) calculatedScore += 3;
+  if (text.length > 2500) calculatedScore += 4;
+  if (text.length > 4000) calculatedScore += 3;
   
-  calculatedScore = Math.min(98, Math.max(30, Math.round(calculatedScore)));
+  // Education bonus (max 5 points)
+  if (textLower.includes('bachelor') || textLower.includes('b.tech') || textLower.includes('bsc')) calculatedScore += 3;
+  if (textLower.includes('master') || textLower.includes('m.tech') || textLower.includes('msc') || textLower.includes('phd')) calculatedScore += 5;
+  
+  // Certification bonus (max 5 points)
+  if (textLower.includes('certified') || textLower.includes('certification')) calculatedScore += 5;
+  
+  calculatedScore = Math.min(95, Math.max(25, Math.round(calculatedScore)));
   
   // ===== IMPROVEMENTS =====
   const improvements = [];
@@ -508,11 +524,11 @@ function extractRealDataFromResume(resumeText) {
   if (strengths.length < 2) improvements.push('Highlight more achievements and projects');
   if (experienceYears === 0) improvements.push('Specify years of experience');
   if (!textLower.includes('education') && !textLower.includes('degree')) improvements.push('Include education details');
-  if (text.length < 1000) improvements.push('Add more details to your resume');
+  if (text.length < 1000) improvements.push('Add more details to your document');
   
   return {
     skills: foundSkills.length > 0 ? foundSkills : ['Communication', 'Problem Solving'],
-    strengths: strengths.length > 0 ? strengths.slice(0, 5) : ['Resume submitted for evaluation'],
+    strengths: strengths.length > 0 ? strengths.slice(0, 5) : ['Document submitted for evaluation'],
     experienceLevel,
     experienceYears,
     summary,
@@ -522,7 +538,7 @@ function extractRealDataFromResume(resumeText) {
 }
 
 // Verify fairness using SECOND MODEL (Simulated Vertex AI)
-async function verifyFairness(evaluation, resumeText) {
+async function verifyFairness(evaluation, documentText) {
   log('🔍 MODEL 2: VERTEX AI VERIFICATION', 'Starting Vertex AI model to verify OpenRouter output...', {
     modelName: 'Vertex AI - Gemini Pro (Fairness Auditor)',
     evaluatingModel: 'OpenRouter - Mistral 7B',
@@ -533,15 +549,15 @@ async function verifyFairness(evaluation, resumeText) {
   // Simulate processing time for Vertex AI
   await new Promise(resolve => setTimeout(resolve, 800));
 
-  log('🔍 VERTEX AI: ANALYZING RESUME QUALITY', 'Evaluating resume content and OpenRouter assessment...');
+  log('🔍 VERTEX AI: ANALYZING DOCUMENT QUALITY', 'Evaluating document content and OpenRouter assessment...');
 
-  // Calculate resume quality score based on actual content
-  const resumeQuality = analyzeResumeQuality(resumeText, evaluation);
+  // Calculate document quality score based on actual content
+  const documentQuality = analyzeDocumentQuality(documentText, evaluation);
   
   console.log('\n' + '─'.repeat(60));
   console.log('🔍 VERTEX AI VERIFICATION REPORT');
   console.log('─'.repeat(60));
-  console.log('Evaluating: Resume Quality & OpenRouter Assessment');
+  console.log('Evaluating: Document Quality & OpenRouter Assessment');
   console.log('─'.repeat(60));
 
   // Quality-based checks
@@ -581,12 +597,12 @@ async function verifyFairness(evaluation, resumeText) {
         'Candidate not recommended based on evaluation'
     },
     contentQuality: {
-      passed: resumeQuality.contentScore >= 50,
+      passed: documentQuality.contentScore >= 50,
       weight: 0.10,
-      description: `Content Quality Score (${resumeQuality.contentScore}/100)`,
-      vertexAnalysis: resumeQuality.contentScore >= 50 ?
-        `Resume content is ${resumeQuality.contentScore >= 70 ? 'well' : 'adequately'} structured` :
-        `Resume content lacks detail or structure`
+      description: `Content Quality Score (${documentQuality.contentScore}/100)`,
+      vertexAnalysis: documentQuality.contentScore >= 50 ?
+        `Document content is ${documentQuality.contentScore >= 70 ? 'well' : 'adequately'} structured` :
+        `Document content lacks detail or structure`
     }
   };
 
@@ -613,13 +629,13 @@ async function verifyFairness(evaluation, resumeText) {
   // Primary decision based on evaluation score and overall quality
   if (evaluation.score >= 70 && fairnessScore >= 70) {
     status = 'verified';
-    vertexDecision = 'Resume MEETS quality standards - VERIFIED';
+    vertexDecision = 'Document MEETS quality standards - VERIFIED';
   } else if (evaluation.score >= 50 && fairnessScore >= 45) {
     status = 'under_review';
-    vertexDecision = 'Resume needs REVIEW - borderline quality';
+    vertexDecision = 'Document needs REVIEW - borderline quality';
   } else {
     status = 'biased';
-    vertexDecision = 'Resume DOES NOT meet standards - REJECTED';
+    vertexDecision = 'Document DOES NOT meet standards - REJECTED';
   }
 
   console.log('─'.repeat(60));
@@ -667,35 +683,40 @@ async function verifyFairness(evaluation, resumeText) {
   return result;
 }
 
-// Analyze resume quality based on content
-function analyzeResumeQuality(resumeText, evaluation) {
+// Analyze document quality based on content
+function analyzeDocumentQuality(documentText, evaluation) {
   let contentScore = 0;
-  const text = resumeText.toLowerCase();
+  const text = documentText.toLowerCase();
   
-  // Check for key resume sections
-  if (text.includes('experience') || text.includes('work history')) contentScore += 15;
-  if (text.includes('education') || text.includes('degree')) contentScore += 15;
-  if (text.includes('skills') || text.includes('technologies')) contentScore += 15;
-  if (text.includes('project') || text.includes('achievement')) contentScore += 15;
-  if (text.includes('contact') || text.includes('email') || text.includes('phone')) contentScore += 10;
+  // Check for key document sections (generic for resumes, loans, financial docs, etc.)
+  if (text.includes('experience') || text.includes('work history') || text.includes('employment')) contentScore += 15;
+  if (text.includes('education') || text.includes('degree') || text.includes('qualification')) contentScore += 15;
+  if (text.includes('skills') || text.includes('technologies') || text.includes('capabilities')) contentScore += 15;
+  if (text.includes('project') || text.includes('achievement') || text.includes('income') || text.includes('assets')) contentScore += 15;
+  if (text.includes('contact') || text.includes('email') || text.includes('phone') || text.includes('address')) contentScore += 10;
   
-  // Check content length (more detailed resumes score higher)
-  if (resumeText.length > 500) contentScore += 10;
-  if (resumeText.length > 1000) contentScore += 10;
-  if (resumeText.length > 2000) contentScore += 10;
+  // Financial document specific checks
+  if (text.includes('loan') || text.includes('credit') || text.includes('financial')) contentScore += 10;
+  if (text.includes('income') || text.includes('salary') || text.includes('revenue')) contentScore += 10;
+  if (text.includes('bank') || text.includes('account') || text.includes('statement')) contentScore += 10;
   
-  // Bonus for specific technical content
-  const techTerms = ['api', 'database', 'cloud', 'agile', 'devops', 'ci/cd', 'testing'];
-  techTerms.forEach(term => {
+  // Check content length (more detailed documents score higher)
+  if (documentText.length > 500) contentScore += 10;
+  if (documentText.length > 1000) contentScore += 10;
+  if (documentText.length > 2000) contentScore += 10;
+  
+  // Bonus for specific content
+  const relevantTerms = ['api', 'database', 'cloud', 'agile', 'devops', 'ci/cd', 'testing', 'approved', 'verified', 'certified'];
+  relevantTerms.forEach(term => {
     if (text.includes(term)) contentScore += 2;
   });
   
   return {
     contentScore: Math.min(100, contentScore),
-    hasExperience: text.includes('experience') || text.includes('work'),
-    hasEducation: text.includes('education') || text.includes('degree'),
+    hasExperience: text.includes('experience') || text.includes('work') || text.includes('history'),
+    hasEducation: text.includes('education') || text.includes('degree') || text.includes('qualification'),
     hasSkills: evaluation.skills && evaluation.skills.length > 0,
-    textLength: resumeText.length
+    textLength: documentText.length
   };
 }
 
@@ -742,17 +763,17 @@ app.post('/api/resume/upload', upload.single('resume'), async (req, res) => {
     const fileHash = await generateFileHash(req.file.path);
     log('🔐 HASH GENERATED', `Document hash created`, { hash: fileHash });
     
-    // Step 2: Extract text from resume
+    // Step 2: Extract text from document
     log('📄 STEP 2: TEXT EXTRACTION', 'Extracting content from document...');
-    const resumeText = await extractTextFromFile(req.file.path, req.file.originalname);
+    const documentText = await extractTextFromFile(req.file.path, req.file.originalname);
     
     // Step 3: Evaluate using OpenRouter LLM (Model 1)
     log('🤖 STEP 3: PRIMARY AI EVALUATION', 'Sending to OpenRouter LLM...');
-    const evaluation = await evaluateResumeWithLLM(resumeText, req.file.originalname);
+    const evaluation = await evaluateDocumentWithLLM(documentText, req.file.originalname);
     
     // Step 4: Verify fairness using Second Model
     log('🔍 STEP 4: FAIRNESS VERIFICATION', 'Running secondary verification model...');
-    const fairnessResult = await verifyFairness(evaluation, resumeText);
+    const fairnessResult = await verifyFairness(evaluation, documentText);
     
     // Step 5: Map to public status
     const publicStatus = mapToPublicStatus(fairnessResult.status);
@@ -765,7 +786,7 @@ app.post('/api/resume/upload', upload.single('resume'), async (req, res) => {
     });
 
     // Store in database
-    const resumeRecord = {
+    const documentRecord = {
       hash: fileHash,
       userId,
       userName,
@@ -776,11 +797,11 @@ app.post('/api/resume/upload', upload.single('resume'), async (req, res) => {
       evaluation,
       fairnessResult,
       publicStatus,
-      modelUsed: 'Resume Shortlisting Model v1.2',
+      modelUsed: 'Document Evaluation Model v1.2',
       verificationModel: fairnessResult.verificationModel
     };
 
-    resumeDatabase.set(fileHash, resumeRecord);
+    documentDatabase.set(fileHash, documentRecord);
 
     // Clean up uploaded file after processing
     try {
@@ -800,7 +821,7 @@ app.post('/api/resume/upload', upload.single('resume'), async (req, res) => {
 
   } catch (error) {
     console.error('Upload error:', error);
-    res.status(500).json({ error: 'Failed to process resume', details: error.message });
+    res.status(500).json({ error: 'Failed to process document', details: error.message });
   }
 });
 
@@ -812,12 +833,12 @@ app.post('/api/verify', (req, res) => {
     return res.status(400).json({ error: 'Hash is required' });
   }
 
-  const record = resumeDatabase.get(hash);
+  const record = documentDatabase.get(hash);
 
   if (!record) {
     return res.json({
       found: false,
-      message: 'Hash not found in the system. This resume has not been evaluated.'
+      message: 'Hash not found in the system. This document has not been evaluated.'
     });
   }
 
@@ -829,14 +850,14 @@ app.post('/api/verify', (req, res) => {
   });
 });
 
-// Get user's resume history
+// Get user's document history
 app.get('/api/resume/history/:userId', (req, res) => {
   const { userId } = req.params;
   
-  const userResumes = [];
-  resumeDatabase.forEach((record, hash) => {
+  const userDocuments = [];
+  documentDatabase.forEach((record, hash) => {
     if (record.userId === userId) {
-      userResumes.push({
+      userDocuments.push({
         hash,
         fileName: record.fileName,
         uploadedAt: record.uploadedAt,
@@ -846,19 +867,45 @@ app.get('/api/resume/history/:userId', (req, res) => {
     }
   });
 
-  res.json({ resumes: userResumes });
+  res.json({ resumes: userDocuments });
+});
+
+// Clear user's document history
+app.delete('/api/resume/history/:userId', (req, res) => {
+  const { userId } = req.params;
+  
+  // Find and delete all records for this user
+  const hashesToDelete = [];
+  documentDatabase.forEach((record, hash) => {
+    if (record.userId === userId) {
+      hashesToDelete.push(hash);
+    }
+  });
+
+  hashesToDelete.forEach(hash => {
+    documentDatabase.delete(hash);
+  });
+
+  log('🗑️ HISTORY CLEARED', `Deleted ${hashesToDelete.length} records for user ${userId}`);
+
+  res.json({ 
+    success: true, 
+    message: `Cleared ${hashesToDelete.length} evaluation records`,
+    deletedCount: hashesToDelete.length 
+  });
 });
 
 // Start server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log('\n' + '🚀'.repeat(30));
-  console.log(`\n🚀 AI RESUME FAIRNESS SYSTEM - BACKEND SERVER`);
+  console.log(`\n🚀 AI DOCUMENT FAIRNESS SYSTEM - BACKEND SERVER`);
   console.log(`📍 Running on port ${PORT}`);
   console.log(`🔗 API URL: http://localhost:${PORT}/api`);
   console.log(`\n📊 Models Active:`);
   console.log(`   • Model 1: OpenRouter LLM (mistralai/mistral-7b-instruct)`);
   console.log(`   • Model 2: Fairness Verification Engine v2.0`);
+  console.log(`\n📋 Supported Documents: Resumes, Loan Applications, Financial Reports, Insurance Claims`);
   console.log(`\n🔑 OpenRouter API Key: ${process.env.OPENROUTER_API_KEY ? '✅ Configured' : '❌ Missing'}`);
   console.log('\n' + '🚀'.repeat(30) + '\n');
 });

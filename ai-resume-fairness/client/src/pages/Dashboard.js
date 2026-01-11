@@ -19,7 +19,8 @@ import {
   Zap
 } from 'lucide-react';
 
-const API_URL = 'http://localhost:5000/api';
+// Use environment variable for API URL, fallback to localhost for development
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
 const Dashboard = () => {
   const { user, logout } = useAuth();
@@ -34,6 +35,7 @@ const Dashboard = () => {
   const [history, setHistory] = useState([]);
   const [processingStep, setProcessingStep] = useState(0);
   const [dragActive, setDragActive] = useState(false);
+  const [showNonZKP, setShowNonZKP] = useState(false);
   const fileInputRef = useRef(null);
 
   // Fetch models on mount
@@ -62,6 +64,19 @@ const Dashboard = () => {
     }
   };
 
+  const clearHistory = async () => {
+    if (window.confirm('Are you sure you want to clear all your evaluation history?')) {
+      try {
+        await axios.delete(`${API_URL}/resume/history/${user.uid}`);
+        setHistory([]);
+      } catch (error) {
+        console.error('Error clearing history:', error);
+        // Clear locally even if server fails
+        setHistory([]);
+      }
+    }
+  };
+
   const handleDrag = (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -83,6 +98,8 @@ const Dashboard = () => {
   };
 
   const handleFileSelect = (selectedFile) => {
+    if (!selectedFile) return;
+    
     const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
     
     if (!allowedTypes.includes(selectedFile.type)) {
@@ -130,7 +147,7 @@ const Dashboard = () => {
       fetchHistory();
     } catch (error) {
       console.error('Upload error:', error);
-      alert('Error uploading resume. Please try again.');
+      alert('Error uploading document. Please try again.');
     }
 
     setUploading(false);
@@ -411,7 +428,7 @@ const Dashboard = () => {
                       </div>
                     </div>
                     <div style={{ fontSize: '12px', color: '#818cf8', marginBottom: '12px' }}>
-                      📋 Task: Resume Evaluation & Scoring
+                      📋 Task: Document Evaluation & Scoring
                     </div>
                     <div style={{ 
                       background: 'rgba(0,0,0,0.2)', 
@@ -519,7 +536,7 @@ const Dashboard = () => {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  gap: '16px',
+                  gap: '12px',
                   flexWrap: 'wrap'
                 }}>
                   <div style={{ 
@@ -529,7 +546,7 @@ const Dashboard = () => {
                     fontSize: '12px',
                     color: '#818cf8'
                   }}>
-                    📄 Resume
+                    📄 Document
                   </div>
                   <span style={{ color: '#64748b' }}>→</span>
                   <div style={{ 
@@ -540,6 +557,16 @@ const Dashboard = () => {
                     color: '#818cf8'
                   }}>
                     🤖 OpenRouter (Evaluate)
+                  </div>
+                  <span style={{ color: '#64748b' }}>→</span>
+                  <div style={{ 
+                    padding: '8px 16px', 
+                    background: 'rgba(236, 72, 153, 0.2)', 
+                    borderRadius: '20px',
+                    fontSize: '12px',
+                    color: '#f472b6'
+                  }}>
+                    🧠 Claude AI (Cross-Check)
                   </div>
                   <span style={{ color: '#64748b' }}>→</span>
                   <div style={{ 
@@ -567,15 +594,42 @@ const Dashboard = () => {
                 </div>
 
                 <div className="result-grid">
-                  <div className="result-item">
-                    <div className="result-item-label">Document Hash (SHA-256)</div>
+                  <div className="result-item" style={{ 
+                    gridColumn: '1 / -1',
+                    background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(139, 92, 246, 0.15))',
+                    border: '2px solid rgba(129, 140, 248, 0.4)',
+                    borderRadius: '16px',
+                    padding: '24px',
+                    textAlign: 'center'
+                  }}>
+                    <div className="result-item-label" style={{ 
+                      fontSize: '16px', 
+                      fontWeight: '600',
+                      marginBottom: '16px',
+                      color: '#a5b4fc'
+                    }}>
+                      🔐 Document Hash (SHA-256)
+                    </div>
                     <div className="result-item-value" style={{ 
                       fontFamily: 'monospace', 
-                      fontSize: 11,
+                      fontSize: '18px',
+                      fontWeight: '600',
                       wordBreak: 'break-all',
-                      color: '#818cf8'
+                      color: '#818cf8',
+                      background: 'rgba(0, 0, 0, 0.3)',
+                      padding: '16px 20px',
+                      borderRadius: '12px',
+                      letterSpacing: '1px',
+                      lineHeight: '1.6'
                     }}>
                       {uploadResult.hash}
+                    </div>
+                    <div style={{ 
+                      marginTop: '12px', 
+                      fontSize: '12px', 
+                      color: '#64748b' 
+                    }}>
+                      This cryptographic hash uniquely identifies your document
                     </div>
                   </div>
 
@@ -625,8 +679,40 @@ const Dashboard = () => {
                   </div>
                 </div>
 
-                {/* Skills Section */}
-                {uploadResult.evaluation?.skills && uploadResult.evaluation.skills.length > 0 && (
+                {/* Non-ZKP Toggle Button */}
+                <div style={{ 
+                  display: 'flex', 
+                  justifyContent: 'center', 
+                  marginTop: '20px',
+                  marginBottom: '16px'
+                }}>
+                  <button
+                    onClick={() => setShowNonZKP(!showNonZKP)}
+                    style={{
+                      padding: '12px 24px',
+                      background: showNonZKP 
+                        ? 'linear-gradient(135deg, #ef4444, #dc2626)' 
+                        : 'linear-gradient(135deg, #f59e0b, #d97706)',
+                      border: 'none',
+                      borderRadius: '12px',
+                      color: '#fff',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      boxShadow: '0 4px 15px rgba(245, 158, 11, 0.3)',
+                      transition: 'all 0.3s ease'
+                    }}
+                  >
+                    <Zap size={18} />
+                    {showNonZKP ? 'Hide Non-ZKP Data' : 'Show Non-ZKP Data'}
+                  </button>
+                </div>
+
+                {/* Skills Section - Hidden by default (Non-ZKP) */}
+                {showNonZKP && uploadResult.evaluation?.skills && uploadResult.evaluation.skills.length > 0 && (
                   <div className="result-item" style={{ marginTop: 20 }}>
                     <div className="result-item-label">Skills Identified ({uploadResult.evaluation.skills.length})</div>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '8px' }}>
@@ -645,8 +731,8 @@ const Dashboard = () => {
                   </div>
                 )}
 
-                {/* Strengths Section */}
-                {uploadResult.evaluation?.strengths && uploadResult.evaluation.strengths.length > 0 && (
+                {/* Strengths Section - Hidden by default (Non-ZKP) */}
+                {showNonZKP && uploadResult.evaluation?.strengths && uploadResult.evaluation.strengths.length > 0 && (
                   <div className="result-item" style={{ marginTop: 16 }}>
                     <div className="result-item-label">Key Strengths</div>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '8px' }}>
@@ -665,8 +751,8 @@ const Dashboard = () => {
                   </div>
                 )}
 
-                {/* Reasoning Section */}
-                {uploadResult.evaluation?.reasoning && (
+                {/* Reasoning Section - Hidden by default (Non-ZKP) */}
+                {showNonZKP && uploadResult.evaluation?.reasoning && (
                   <div className="result-item" style={{ marginTop: 16 }}>
                     <div className="result-item-label">AI Analysis Summary</div>
                     <div className="result-item-value" style={{ 
@@ -727,6 +813,386 @@ const Dashboard = () => {
               <Cpu size={24} />
               AI Models Overview
             </h2>
+            
+            {/* System Architecture Description */}
+            <div style={{
+              background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(236, 72, 153, 0.1), rgba(16, 185, 129, 0.1))',
+              border: '1px solid rgba(99, 102, 241, 0.2)',
+              borderRadius: '16px',
+              padding: '24px',
+              marginBottom: '32px'
+            }}>
+              <h3 style={{ color: '#fff', fontSize: '18px', marginBottom: '12px' }}>
+                🔄 Three-Model Verification System
+              </h3>
+              <p style={{ color: '#94a3b8', lineHeight: '1.7', fontSize: '14px' }}>
+                Our system uses a <strong style={{ color: '#818cf8' }}>triple-model architecture</strong> to ensure fair and unbiased document evaluation. 
+                The first model (OpenRouter/Mistral) evaluates and scores documents, the second model (Claude AI) performs an independent cross-check 
+                to validate the analysis, and the third model (Vertex AI/Gemini) verifies whether the decisions are fair or biased. 
+                This multi-layer cross-verification approach ensures maximum transparency and accountability in AI-powered decisions.
+              </p>
+            </div>
+
+            {/* Three Main Models */}
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', 
+              gap: '24px',
+              marginBottom: '32px'
+            }}>
+              {/* Model 1: OpenRouter */}
+              <div style={{
+                background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(139, 92, 246, 0.15))',
+                border: '2px solid rgba(99, 102, 241, 0.4)',
+                borderRadius: '20px',
+                padding: '28px',
+                position: 'relative',
+                overflow: 'hidden'
+              }}>
+                <div style={{
+                  position: 'absolute',
+                  top: '12px',
+                  right: '12px',
+                  background: 'rgba(99, 102, 241, 0.3)',
+                  padding: '4px 12px',
+                  borderRadius: '20px',
+                  fontSize: '11px',
+                  color: '#a5b4fc'
+                }}>
+                  PRIMARY MODEL
+                </div>
+                
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '20px' }}>
+                  <div style={{
+                    width: '60px',
+                    height: '60px',
+                    background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                    borderRadius: '16px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxShadow: '0 8px 20px rgba(99, 102, 241, 0.3)'
+                  }}>
+                    <Cpu size={28} color="#fff" />
+                  </div>
+                  <div>
+                    <h3 style={{ color: '#fff', fontSize: '20px', fontWeight: '700', margin: 0 }}>
+                      OpenRouter API
+                    </h3>
+                    <p style={{ color: '#818cf8', fontSize: '13px', margin: '4px 0 0 0' }}>
+                      Mistral 7B Instruct / Gemini
+                    </p>
+                  </div>
+                </div>
+
+                <div style={{ 
+                  background: 'rgba(0, 0, 0, 0.2)', 
+                  borderRadius: '12px', 
+                  padding: '16px',
+                  marginBottom: '16px'
+                }}>
+                  <div style={{ color: '#a5b4fc', fontSize: '12px', fontWeight: '600', marginBottom: '8px' }}>
+                    📋 PRIMARY TASK
+                  </div>
+                  <p style={{ color: '#e2e8f0', fontSize: '14px', lineHeight: '1.6', margin: 0 }}>
+                    Evaluates documents (resumes, loan applications, financial reports, insurance claims, etc.) by analyzing content, criteria, and relevant factors. 
+                    Generates a comprehensive score and recommendation.
+                  </p>
+                </div>
+
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                  <span style={{ padding: '6px 12px', background: 'rgba(99, 102, 241, 0.2)', borderRadius: '20px', fontSize: '11px', color: '#818cf8' }}>
+                    Document Scoring
+                  </span>
+                  <span style={{ padding: '6px 12px', background: 'rgba(99, 102, 241, 0.2)', borderRadius: '20px', fontSize: '11px', color: '#818cf8' }}>
+                    Skill Extraction
+                  </span>
+                  <span style={{ padding: '6px 12px', background: 'rgba(99, 102, 241, 0.2)', borderRadius: '20px', fontSize: '11px', color: '#818cf8' }}>
+                    Experience Analysis
+                  </span>
+                  <span style={{ padding: '6px 12px', background: 'rgba(99, 102, 241, 0.2)', borderRadius: '20px', fontSize: '11px', color: '#818cf8' }}>
+                    Shortlist Decision
+                  </span>
+                </div>
+              </div>
+
+              {/* Model 2: Claude AI - Cross-Check Model */}
+              <div style={{
+                background: 'linear-gradient(135deg, rgba(236, 72, 153, 0.15), rgba(219, 39, 119, 0.15))',
+                border: '2px solid rgba(236, 72, 153, 0.4)',
+                borderRadius: '20px',
+                padding: '28px',
+                position: 'relative',
+                overflow: 'hidden'
+              }}>
+                <div style={{
+                  position: 'absolute',
+                  top: '12px',
+                  right: '12px',
+                  background: 'rgba(236, 72, 153, 0.3)',
+                  padding: '4px 12px',
+                  borderRadius: '20px',
+                  fontSize: '11px',
+                  color: '#f9a8d4'
+                }}>
+                  CROSS-CHECK MODEL
+                </div>
+                
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '20px' }}>
+                  <div style={{
+                    width: '60px',
+                    height: '60px',
+                    background: 'linear-gradient(135deg, #ec4899, #db2777)',
+                    borderRadius: '16px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxShadow: '0 8px 20px rgba(236, 72, 153, 0.3)'
+                  }}>
+                    <Zap size={28} color="#fff" />
+                  </div>
+                  <div>
+                    <h3 style={{ color: '#fff', fontSize: '20px', fontWeight: '700', margin: 0 }}>
+                      Claude AI
+                    </h3>
+                    <p style={{ color: '#f472b6', fontSize: '13px', margin: '4px 0 0 0' }}>
+                      Anthropic - Cross Validator
+                    </p>
+                  </div>
+                </div>
+
+                <div style={{ 
+                  background: 'rgba(0, 0, 0, 0.2)', 
+                  borderRadius: '12px', 
+                  padding: '16px',
+                  marginBottom: '16px'
+                }}>
+                  <div style={{ color: '#f9a8d4', fontSize: '12px', fontWeight: '600', marginBottom: '8px' }}>
+                    🧠 CROSS-CHECK TASK
+                  </div>
+                  <p style={{ color: '#e2e8f0', fontSize: '14px', lineHeight: '1.6', margin: 0 }}>
+                    Independently validates the OpenRouter evaluation by performing a secondary analysis. 
+                    Identifies potential inconsistencies or overlooked factors in the initial assessment.
+                  </p>
+                </div>
+
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                  <span style={{ padding: '6px 12px', background: 'rgba(236, 72, 153, 0.2)', borderRadius: '20px', fontSize: '11px', color: '#f472b6' }}>
+                    Secondary Analysis
+                  </span>
+                  <span style={{ padding: '6px 12px', background: 'rgba(236, 72, 153, 0.2)', borderRadius: '20px', fontSize: '11px', color: '#f472b6' }}>
+                    Consistency Check
+                  </span>
+                  <span style={{ padding: '6px 12px', background: 'rgba(236, 72, 153, 0.2)', borderRadius: '20px', fontSize: '11px', color: '#f472b6' }}>
+                    Gap Detection
+                  </span>
+                  <span style={{ padding: '6px 12px', background: 'rgba(236, 72, 153, 0.2)', borderRadius: '20px', fontSize: '11px', color: '#f472b6' }}>
+                    Score Validation
+                  </span>
+                </div>
+              </div>
+
+              {/* Model 3: Vertex AI */}
+              <div style={{
+                background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(5, 150, 105, 0.15))',
+                border: '2px solid rgba(16, 185, 129, 0.4)',
+                borderRadius: '20px',
+                padding: '28px',
+                position: 'relative',
+                overflow: 'hidden'
+              }}>
+                <div style={{
+                  position: 'absolute',
+                  top: '12px',
+                  right: '12px',
+                  background: 'rgba(16, 185, 129, 0.3)',
+                  padding: '4px 12px',
+                  borderRadius: '20px',
+                  fontSize: '11px',
+                  color: '#6ee7b7'
+                }}>
+                  VERIFICATION MODEL
+                </div>
+                
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '20px' }}>
+                  <div style={{
+                    width: '60px',
+                    height: '60px',
+                    background: 'linear-gradient(135deg, #10b981, #059669)',
+                    borderRadius: '16px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxShadow: '0 8px 20px rgba(16, 185, 129, 0.3)'
+                  }}>
+                    <Shield size={28} color="#fff" />
+                  </div>
+                  <div>
+                    <h3 style={{ color: '#fff', fontSize: '20px', fontWeight: '700', margin: 0 }}>
+                      Vertex AI
+                    </h3>
+                    <p style={{ color: '#34d399', fontSize: '13px', margin: '4px 0 0 0' }}>
+                      Gemini Pro - Fairness Auditor
+                    </p>
+                  </div>
+                </div>
+
+                <div style={{ 
+                  background: 'rgba(0, 0, 0, 0.2)', 
+                  borderRadius: '12px', 
+                  padding: '16px',
+                  marginBottom: '16px'
+                }}>
+                  <div style={{ color: '#6ee7b7', fontSize: '12px', fontWeight: '600', marginBottom: '8px' }}>
+                    🔍 VERIFICATION TASK
+                  </div>
+                  <p style={{ color: '#e2e8f0', fontSize: '14px', lineHeight: '1.6', margin: 0 }}>
+                    Independently audits the OpenRouter model's evaluation to detect potential bias. 
+                    Determines if the scoring decision is <strong style={{ color: '#34d399' }}>Fair</strong> or <strong style={{ color: '#f87171' }}>Biased</strong>.
+                  </p>
+                </div>
+
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                  <span style={{ padding: '6px 12px', background: 'rgba(16, 185, 129, 0.2)', borderRadius: '20px', fontSize: '11px', color: '#34d399' }}>
+                    Bias Detection
+                  </span>
+                  <span style={{ padding: '6px 12px', background: 'rgba(16, 185, 129, 0.2)', borderRadius: '20px', fontSize: '11px', color: '#34d399' }}>
+                    Fairness Scoring
+                  </span>
+                  <span style={{ padding: '6px 12px', background: 'rgba(16, 185, 129, 0.2)', borderRadius: '20px', fontSize: '11px', color: '#34d399' }}>
+                    Cross-Validation
+                  </span>
+                  <span style={{ padding: '6px 12px', background: 'rgba(16, 185, 129, 0.2)', borderRadius: '20px', fontSize: '11px', color: '#34d399' }}>
+                    Quality Audit
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Flow Diagram */}
+            <div style={{
+              background: 'rgba(255,255,255,0.03)',
+              borderRadius: '16px',
+              padding: '24px',
+              marginBottom: '32px'
+            }}>
+              <h4 style={{ color: '#6366f1', fontSize: '12px', fontWeight: '700', marginBottom: '20px', textTransform: 'uppercase', letterSpacing: '1.5px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Zap size={14} /> How It Works
+              </h4>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '8px',
+                flexWrap: 'wrap'
+              }}>
+                {/* Step 1: Upload */}
+                <div style={{ 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  alignItems: 'center', 
+                  gap: '10px',
+                  padding: '16px 20px',
+                  background: 'rgba(99, 102, 241, 0.08)',
+                  borderRadius: '14px',
+                  border: '1px solid rgba(99, 102, 241, 0.15)',
+                  minWidth: '90px'
+                }}>
+                  <div style={{ fontSize: '24px' }}>📄</div>
+                  <span style={{ fontSize: '11px', color: '#a5b4fc', fontWeight: '600', textTransform: 'uppercase' }}>Upload</span>
+                </div>
+                <span style={{ color: '#4b5563', fontSize: '16px' }}>→</span>
+                
+                {/* Step 2: Hash */}
+                <div style={{ 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  alignItems: 'center', 
+                  gap: '10px',
+                  padding: '16px 20px',
+                  background: 'rgba(251, 191, 36, 0.08)',
+                  borderRadius: '14px',
+                  border: '1px solid rgba(251, 191, 36, 0.15)',
+                  minWidth: '90px'
+                }}>
+                  <div style={{ fontSize: '24px' }}>🔐</div>
+                  <span style={{ fontSize: '11px', color: '#fbbf24', fontWeight: '600', textTransform: 'uppercase' }}>Hash</span>
+                </div>
+                <span style={{ color: '#4b5563', fontSize: '16px' }}>→</span>
+                
+                {/* Step 3: Analyze (OpenRouter) */}
+                <div style={{ 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  alignItems: 'center', 
+                  gap: '10px',
+                  padding: '16px 20px',
+                  background: 'rgba(99, 102, 241, 0.08)',
+                  borderRadius: '14px',
+                  border: '1px solid rgba(99, 102, 241, 0.15)',
+                  minWidth: '90px'
+                }}>
+                  <div style={{ fontSize: '24px' }}>🤖</div>
+                  <span style={{ fontSize: '11px', color: '#818cf8', fontWeight: '600', textTransform: 'uppercase' }}>Analyze</span>
+                </div>
+                <span style={{ color: '#4b5563', fontSize: '16px' }}>→</span>
+                
+                {/* Step 4: Cross-Check (Claude AI) - NEW */}
+                <div style={{ 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  alignItems: 'center', 
+                  gap: '10px',
+                  padding: '16px 20px',
+                  background: 'rgba(236, 72, 153, 0.08)',
+                  borderRadius: '14px',
+                  border: '1px solid rgba(236, 72, 153, 0.15)',
+                  minWidth: '90px'
+                }}>
+                  <div style={{ fontSize: '24px' }}>🧠</div>
+                  <span style={{ fontSize: '11px', color: '#f472b6', fontWeight: '600', textTransform: 'uppercase' }}>Cross-Check</span>
+                </div>
+                <span style={{ color: '#4b5563', fontSize: '16px' }}>→</span>
+                
+                {/* Step 5: Verify (Vertex AI) */}
+                <div style={{ 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  alignItems: 'center', 
+                  gap: '10px',
+                  padding: '16px 20px',
+                  background: 'rgba(16, 185, 129, 0.08)',
+                  borderRadius: '14px',
+                  border: '1px solid rgba(16, 185, 129, 0.15)',
+                  minWidth: '90px'
+                }}>
+                  <div style={{ fontSize: '24px' }}>✅</div>
+                  <span style={{ fontSize: '11px', color: '#34d399', fontWeight: '600', textTransform: 'uppercase' }}>Verify</span>
+                </div>
+                <span style={{ color: '#4b5563', fontSize: '16px' }}>→</span>
+                
+                {/* Step 6: Result */}
+                <div style={{ 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  alignItems: 'center', 
+                  gap: '10px',
+                  padding: '16px 20px',
+                  background: 'rgba(139, 92, 246, 0.08)',
+                  borderRadius: '14px',
+                  border: '1px solid rgba(139, 92, 246, 0.15)',
+                  minWidth: '90px'
+                }}>
+                  <div style={{ fontSize: '24px' }}>📊</div>
+                  <span style={{ fontSize: '11px', color: '#a78bfa', fontWeight: '600', textTransform: 'uppercase' }}>Result</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Additional Models from API */}
+            <h3 style={{ color: '#fff', fontSize: '16px', marginBottom: '16px' }}>
+              📋 Registered AI Models
+            </h3>
             <div className="models-grid">
               {models.map((model) => (
                 <div key={model.id} className="model-card">
@@ -793,14 +1259,38 @@ const Dashboard = () => {
         {/* History Tab */}
         {activeTab === 'history' && (
           <div className="upload-section">
-            <h2 className="section-title">
-              <Activity size={24} />
-              Your Evaluation History
-            </h2>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <h2 className="section-title" style={{ marginBottom: 0 }}>
+                <Activity size={24} />
+                Your Evaluation History
+              </h2>
+              {history.length > 0 && (
+                <button
+                  onClick={clearHistory}
+                  style={{
+                    padding: '10px 20px',
+                    background: 'linear-gradient(135deg, #ef4444, #dc2626)',
+                    border: 'none',
+                    borderRadius: '10px',
+                    color: '#fff',
+                    fontSize: '13px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    boxShadow: '0 4px 15px rgba(239, 68, 68, 0.3)'
+                  }}
+                >
+                  <X size={16} />
+                  Clear History
+                </button>
+              )}
+            </div>
 
             {history.length === 0 ? (
               <p style={{ color: '#94a3b8', textAlign: 'center', padding: 40 }}>
-                No evaluations yet. Upload a resume to get started.
+                No evaluations yet. Upload a document to get started.
               </p>
             ) : (
               <table className="history-table">
@@ -856,9 +1346,9 @@ const Dashboard = () => {
         <div className="processing-overlay">
           <div className="processing-card" style={{ maxWidth: '500px' }}>
             <div className="spinner"></div>
-            <h3 className="processing-title">Processing Resume</h3>
+            <h3 className="processing-title">Processing Document</h3>
             <p style={{ color: '#94a3b8', marginBottom: 20 }}>
-              Two AI models are analyzing your document
+              Three AI models are analyzing your document
             </p>
             
             <div className="processing-steps">
@@ -888,26 +1378,39 @@ const Dashboard = () => {
                     🤖 MODEL 1: OpenRouter LLM
                   </div>
                   <div style={{ fontSize: '11px', color: '#64748b' }}>
-                    Mistral 7B - Resume Evaluation
+                    Mistral 7B - Document Evaluation
                   </div>
                 </div>
               </div>
               <div className={`step ${processingStep >= 4 ? (processingStep > 4 ? 'completed' : 'active') : ''}`}>
-                <div className="step-icon" style={{ background: processingStep === 4 ? 'rgba(16, 185, 129, 0.3)' : '' }}>
+                <div className="step-icon" style={{ background: processingStep === 4 ? 'rgba(236, 72, 153, 0.3)' : '' }}>
                   {processingStep > 4 ? '✓' : '4'}
                 </div>
                 <div>
-                  <div style={{ color: processingStep === 4 ? '#34d399' : '' }}>
-                    🔍 MODEL 2: Vertex AI
+                  <div style={{ color: processingStep === 4 ? '#f472b6' : '' }}>
+                    🧠 MODEL 2: Claude AI
                   </div>
                   <div style={{ fontSize: '11px', color: '#64748b' }}>
-                    Gemini Pro - Verifying OpenRouter Output
+                    Anthropic - Cross-Check Analysis
                   </div>
                 </div>
               </div>
-              <div className={`step ${processingStep >= 5 ? 'completed' : ''}`}>
+              <div className={`step ${processingStep >= 5 ? (processingStep > 5 ? 'completed' : 'active') : ''}`}>
+                <div className="step-icon" style={{ background: processingStep === 5 ? 'rgba(16, 185, 129, 0.3)' : '' }}>
+                  {processingStep > 5 ? '✓' : '5'}
+                </div>
+                <div>
+                  <div style={{ color: processingStep === 5 ? '#34d399' : '' }}>
+                    🔍 MODEL 3: Vertex AI
+                  </div>
+                  <div style={{ fontSize: '11px', color: '#64748b' }}>
+                    Gemini Pro - Final Verification
+                  </div>
+                </div>
+              </div>
+              <div className={`step ${processingStep >= 6 ? 'completed' : ''}`}>
                 <div className="step-icon">
-                  {processingStep >= 5 ? '✓' : '5'}
+                  {processingStep >= 6 ? '✓' : '6'}
                 </div>
                 <div>Complete!</div>
               </div>
@@ -930,12 +1433,25 @@ const Dashboard = () => {
               <div style={{ 
                 marginTop: '20px', 
                 padding: '12px', 
+                background: 'rgba(236, 72, 153, 0.1)', 
+                borderRadius: '10px',
+                fontSize: '12px',
+                color: '#f472b6'
+              }}>
+                Claude AI performing independent cross-check analysis...
+              </div>
+            )}
+
+            {processingStep === 5 && (
+              <div style={{ 
+                marginTop: '20px', 
+                padding: '12px', 
                 background: 'rgba(16, 185, 129, 0.1)', 
                 borderRadius: '10px',
                 fontSize: '12px',
                 color: '#34d399'
               }}>
-                Vertex AI checking OpenRouter output for bias...
+                Vertex AI verifying for bias and fairness...
               </div>
             )}
           </div>

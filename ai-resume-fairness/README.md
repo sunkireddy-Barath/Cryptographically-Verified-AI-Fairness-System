@@ -110,11 +110,60 @@ ai-resume-fairness/
 
 ## 🔑 Environment Variables
 
-Server `.env`:
+Server `.env` (for local development):
 ```
 PORT=5000
 OPENROUTER_API_KEY=your_openrouter_key
 FIREBASE_PROJECT_ID=cit-chennai
+```
+
+## 🚀 Vercel Deployment
+
+### 1. Push to GitHub
+```bash
+git add .
+git commit -m "Prepare for Vercel deployment"
+git push origin main
+```
+
+### 2. Deploy to Vercel
+
+1. Go to [vercel.com](https://vercel.com) and log in
+2. Click "New Project"
+3. Import your GitHub repository
+4. Configure the project:
+   - **Framework Preset**: Other
+   - **Root Directory**: `TechSprit/ai-resume-fairness` (if not in root)
+   - **Build Command**: `cd client && npm install && npm run build`
+   - **Output Directory**: `client/build`
+
+### 3. Set Environment Variables
+
+In Vercel Dashboard → Settings → Environment Variables, add:
+
+| Variable | Value | Description |
+|----------|-------|-------------|
+| `OPENROUTER_API_KEY` | `sk-or-...` | Your OpenRouter API key |
+
+### 4. Redeploy
+
+After adding environment variables, trigger a new deployment.
+
+### Vercel Project Structure
+
+```
+ai-resume-fairness/
+├── api/                    # Vercel Serverless Functions
+│   ├── health.js          # Health check endpoint
+│   ├── models.js          # AI models endpoint
+│   ├── verify.js          # Hash verification
+│   └── resume/
+│       ├── upload.js      # Resume upload & evaluation
+│       └── history/
+│           └── [userId].js # User history (dynamic route)
+├── client/                 # React Frontend
+├── vercel.json            # Vercel configuration
+└── package.json
 ```
 
 ## 📝 License
